@@ -1,3 +1,4 @@
+
 name: Build S.A DOORS APK
 
 on:
@@ -5,16 +6,15 @@ on:
   push:
     paths:
       - "sa-doors-business-app-project.zip"
+      - ".github/workflows/build-apk.yml"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Extract project
-        run: unzip -o sa-doors-business-app-project.zip -d extracted
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -22,14 +22,36 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Extract project
+        run: |
+          mkdir -p extracted
+          unzip -o sa-doors-business-app-project.zip -d extracted
+          echo "Extracted project files:"
+          find extracted -maxdepth 4 \( -name settings.gradle -o -name settings.gradle.kts \)
+
+      - name: Find Android project
+        run: |
+          PROJECT_DIR=$(find extracted -type f \( -name settings.gradle -o -name settings.gradle.kts \) -printf '%h\n' | head -n 1)
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "ERROR: No Gradle settings file found in ZIP."
+            exit 1
+          fi
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Found project at: $PROJECT_DIR"
 
       - name: Build APK
-        run: gradle -p extracted assembleDebug
+        run: |
+          if [ -f "$PROJECT_DIR/gradlew" ]; then
+            chmod +x "$PROJECT_DIR/gradlew"
+            "$PROJECT_DIR/gradlew" -p "$PROJECT_DIR" assembleDebug
+          else
+            gradle -p "$PROJECT_DIR" assembleDebug
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SA-DOORS-APK
-          path: extracted/app/build/outputs/apk/debug/app-debug.apk
+          path: extracted/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          
