@@ -38,14 +38,7 @@ jobs:
           fi
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Found project at: $PROJECT_DIR"
-      - name: Build APK
-        run: |
-          if [ -f "$PROJECT_DIR/gradlew" ]; then
-            chmod +x "$PROJECT_DIR/gradlew"
-            "$PROJECT_DIR/gradlew" -p "$PROJECT_DIR" assembleDebug
-          else
-            gradle -p "$PROJECT_DIR" assembleDebug
-          fi
+         
       - name: Diagnose build files
         run: |
           echo "Project directory: $PROJECT_DIR"
@@ -55,6 +48,17 @@ jobs:
           find "$PROJECT_DIR" -maxdepth 3 -type f \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle-wrapper.properties" \)
           echo "App folder:"
           ls -la "$PROJECT_DIR/app" || true
+     
+      - name: Build APK
+        run: |
+          if [ -f "$PROJECT_DIR/gradlew" ]; then
+            chmod +x "$PROJECT_DIR/gradlew"
+            "$PROJECT_DIR/gradlew" -p "$PROJECT_DIR" assembleDebug
+          else
+            gradle -p "$PROJECT_DIR" assembleDebug
+          fi
+          
+      
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
