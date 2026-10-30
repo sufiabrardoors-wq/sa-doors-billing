@@ -64,6 +64,39 @@ jobs:
           FILE=$(find "$PROJECT_DIR" -name MainActivity.java | head -n 1)
           echo "Java file: $FILE"
           nl -ba "$FILE" | sed -n '65,105p'
+      - name: Fix Android PDF printing
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, sys
+          files = list(pathlib.Path("extracted").rglob("MainActivity.java"))
+          if not files:
+              sys.exit("MainActivity.java not found")
+          p = files[0]
+          s = p.read_text()
+          pattern = r'        private void createPdfForSharing\(.*?(?=        private void shareFile\()'
+          replacement = '''        private void createPdfForSharing(final String html, final String requestedName, final boolean whatsappOnly, final String message) {
+              runOnUiThread(() -> {
+                  WebView pdfView = new WebView(MainActivity.this);
+                  pdfView.getSettings().setJavaScriptEnabled(false);
+                  pdfView.setWebViewClient(new WebViewClient() {
+                      @Override public void onPageFinished(WebView view, String url) {
+                          String safeName = requestedName == null ? "SA-DOORS-Invoice" : requestedName.replaceAll("[^a-zA-Z0-9._-]", "_");
+                          if (safeName.toLowerCase().endsWith(".pdf")) safeName = safeName.substring(0, safeName.length() - 4);
+                          PrintDocumentAdapter adapter = view.createPrintDocumentAdapter(safeName);
+                          android.print.PrintManager manager = (android.print.PrintManager) getSystemService(android.content.Context.PRINT_SERVICE);
+                          manager.print(safeName, adapter, new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).build());
+                      }
+                  });
+                  pdfView.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
+              });
+          }
+           '''
+          s2, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if n != 1:
+              sys.exit("Could not safely locate PDF method; no change made")
+          p.write_text(s2)
+          print("Fixed PDF printing in", p)
+          PY
       - name: Build APK
         run: |
           if [ -f "$PROJECT_DIR/gradlew" ]; then
