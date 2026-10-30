@@ -38,17 +38,19 @@ jobs:
           fi
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Found project at: $PROJECT_DIR"
-         
+        
       - name: Diagnose build files
+        continue-on-error:  true 
         run: |
-          echo "Project directory: $PROJECT_DIR"
-          echo "Project files:"
-          ls -la "$PROJECT_DIR"
-          echo "Gradle files:"
-          find "$PROJECT_DIR" -maxdepth 3 -type f \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle-wrapper.properties" \)
+          echo "PROJECT_DIR=$PROJECT_DIR"
+          echo "Extracted files:"
+          find extracted -maxdepth 5 -type f | head -200 || true
+          echo "Project folder:"
+          ls -la "$PROJECT_DIR" || true
           echo "App folder:"
           ls -la "$PROJECT_DIR/app" || true
-     
+          echo "Gradle files:"
+          find extracted -name "*.gradle" -o -name "*.gradle.kts" || true
       - name: Build APK
         run: |
           if [ -f "$PROJECT_DIR/gradlew" ]; then
