@@ -21,7 +21,10 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-          
+      - name: Check Java version
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"       
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
