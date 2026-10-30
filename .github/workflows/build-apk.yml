@@ -38,8 +38,6 @@ jobs:
           fi
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Found project at: $PROJECT_DIR"
-
-      
       - name: Build APK
         run: |
           if [ -f "$PROJECT_DIR/gradlew" ]; then
