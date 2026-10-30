@@ -4,20 +4,17 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "sa-doors-billing-project.zip"
+      - "sa-doors-business-app-project.zip"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract Android project
-        run: |
-          unzip -o sa-doors-billing-project.zip -d project
-          cp -r project/FlushDoorPrivateAPKProject/. . 2>/dev/null || cp -r project/. .
+      - name: Extract project
+        run: unzip -o sa-doors-business-app-project.zip -d extracted
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -29,10 +26,10 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build APK
-        run: gradle assembleDebug
+        run: gradle -p extracted assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SA-DOORS-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: extracted/app/build/outputs/apk/debug/app-debug.apk
