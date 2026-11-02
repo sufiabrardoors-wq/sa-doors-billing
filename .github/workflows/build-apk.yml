@@ -74,7 +74,7 @@ jobs:
           p = files[0]
           s = p.read_text()
           pattern = r'        private void createPdfForSharing\(.*?(?=        private void shareFile\()'
-          replacement = '''        private void createPdfForSharing(final String html, final String requestedName, final boolean whatsappOnly, final String message) {
+          replacement = '''        private void createPdfForSharing(final String html, final String requestedName, final boolean whatsappOnly, final String message, final boolean saveToDownloads) {
               runOnUiThread(() -> {
                   WebView pdfView = new WebView(MainActivity.this);
                   pdfView.getSettings().setJavaScriptEnabled(false);
