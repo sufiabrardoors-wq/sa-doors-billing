@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "sa-doors-business-app-project.zip"
+      - "SA-DOORS-Corrected-Source.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -15,27 +15,22 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
-      - name: Check Java version
-        run: |
-          java -version
-          echo "JAVA_HOME=$JAVA_HOME"       
-      - name: Set up Gradle
+
+      - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
 
-      - name: Extract project
+      - name: Extract corrected project
         run: |
           mkdir -p extracted
-          unzip -o sa-doors-business-app-project.zip -d extracted
-          echo "Extracted project files:"
-          find extracted -maxdepth 4 \( -name settings.gradle -o -name settings.gradle.kts \)
+          unzip -o SA-DOORS-Corrected-Source.zip -d extracted
 
       - name: Find Android project
         run: |
@@ -46,57 +41,7 @@ jobs:
           fi
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Found project at: $PROJECT_DIR"
-        
-      - name: Diagnose build files
-        continue-on-error:  true 
-        run: |
-          echo "PROJECT_DIR=$PROJECT_DIR"
-          echo "Extracted files:"
-          find extracted -maxdepth 5 -type f | head -200 || true
-          echo "Project folder:"
-          ls -la "$PROJECT_DIR" || true
-          echo "App folder:"
-          ls -la "$PROJECT_DIR/app" || true
-          echo "Gradle files:"
-          find extracted -name "*.gradle" -o -name "*.gradle.kts" || true
-      - name: Show print code
-        run: |
-          FILE=$(find "$PROJECT_DIR" -name MainActivity.java | head -n 1)
-          echo "Java file: $FILE"
-          nl -ba "$FILE" | sed -n '65,105p'
-      - name: Fix Android PDF printing
-        run: |
-          python3 - <<'PY'
-          import pathlib, re, sys
-          files = list(pathlib.Path("extracted").rglob("MainActivity.java"))
-          if not files:
-              sys.exit("MainActivity.java not found")
-          p = files[0]
-          s = p.read_text()
-          pattern = r'        private void createPdfForSharing\(.*?(?=        private void shareFile\()'
-          replacement = '''        private void createPdfForSharing(final String html, final String requestedName, final boolean whatsappOnly, final String message, final boolean saveToDownloads) {
-              runOnUiThread(() -> {
-                  WebView pdfView = new WebView(MainActivity.this);
-                  pdfView.getSettings().setJavaScriptEnabled(false);
-                  pdfView.setWebViewClient(new WebViewClient() {
-                      @Override public void onPageFinished(WebView view, String url) {
-                          String safeName = requestedName == null ? "SA-DOORS-Invoice" : requestedName.replaceAll("[^a-zA-Z0-9._-]", "_");
-                          if (safeName.toLowerCase().endsWith(".pdf")) safeName = safeName.substring(0, safeName.length() - 4);
-                          PrintDocumentAdapter adapter = view.createPrintDocumentAdapter(safeName);
-                          android.print.PrintManager manager = (android.print.PrintManager) getSystemService(android.content.Context.PRINT_SERVICE);
-                          manager.print(safeName, adapter, new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).build());
-                      }
-                  });
-                  pdfView.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
-              });
-          }
-           '''
-          s2, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
-          if n != 1:
-              sys.exit("Could not safely locate PDF method; no change made")
-          p.write_text(s2)
-          print("Fixed PDF printing in", p)
-          PY
+
       - name: Build APK
         run: |
           if [ -f "$PROJECT_DIR/gradlew" ]; then
@@ -105,8 +50,7 @@ jobs:
           else
             gradle -p "$PROJECT_DIR" assembleDebug
           fi
-          
-      
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
