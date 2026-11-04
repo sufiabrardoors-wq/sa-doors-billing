@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SA-DOORS-Corrected-Source.zip"
+      - "SA-DOORS-Advanced-Party-Balance-Report.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -27,10 +27,10 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Extract corrected project
+      - name: Extract advanced project
         run: |
           mkdir -p extracted
-          unzip -o SA-DOORS-Corrected-Source.zip -d extracted
+          unzip -o SA-DOORS-Advanced-Party-Balance-Report.zip -d extracted
 
       - name: Find Android project
         run: |
@@ -57,4 +57,4 @@ jobs:
           name: SA-DOORS-APK
           path: extracted/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-          
+
