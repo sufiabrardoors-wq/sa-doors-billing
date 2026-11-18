@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "SA-DOORS-Source.zip"
+      - "SA-DOORS-Corrected-Source.zip"
       - ".github/workflows/build-apk.yml"
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
       - name: Extract new S.A DOORS source
         run: |
           mkdir -p extracted
-          unzip -o SA-DOORS-Source.zip -d extracted
+          unzip -o SA-DOORS-Corrected-Source.zip -d extracted
 
       - name: Find Android project
         run: |
